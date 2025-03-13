@@ -1,0 +1,142 @@
+{
+  "log": {
+    "disabled": false,
+    "level": "info",
+    "timestamp": true
+  },
+  "dns": {
+    "servers": [
+      {
+        "tag": "direct-dns",
+        "type": "udp",
+        "server": "217.218.155.155",
+        "server_port": 53
+      },
+      {
+        "tag": "proxy-dns",
+        "type": "https",
+        "server": "1.0.0.1",
+        "server_port": 443,
+        "tls": {
+          "enabled": true,
+          "server_name": "one.one.one.one"
+        },
+        "detour": "hysteria2"
+      },
+      {
+        "type": "fakeip",
+        "tag": "fakeip_dns",
+        "inet4_range": "198.18.0.0/15",
+        "inet6_range": "fc00::/18"
+      }
+    ],
+    "rules": [
+      {
+        "rule_set": "geosite-ir",
+        "action": "route",
+        "server": "direct-dns",
+        "strategy": "prefer_ipv4",
+        "rewrite_ttl": 600
+      }
+    ],
+    "final": "proxy-dns",
+    "strategy": "prefer_ipv4",
+    "cache_capacity": 1024,
+    "independent_cache": true,
+    "disable_expire": false,
+    "reverse_mapping": true
+  },
+  "inbounds": [
+    {
+      "type": "tun",
+      "interface_name": "utun5",
+      "address": [
+        "172.19.0.1/30"
+      ],
+      "auto_route": true,
+      "strict_route": true,
+      "mtu": 1400,
+      "endpoint_independent_nat": true,
+      "udp_timeout": "300s",
+      "stack": "gvisor"
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "hysteria2",
+      "tag": "hysteria2",
+      "server": "YOUR_SERVER_IPV4_ADDRESS",
+      "server_port": 443,
+      "up_mbps": 5,
+      "down_mbps": 25,
+      "password": "YOUR_PASSWORD_HERE",
+      "tls": {
+        "enabled": true,
+        "server_name": "example.com",
+        "alpn": "h3"
+      },
+      "domain_resolver": {
+        "server": "proxy-dns"
+      }
+    },
+    {
+      "type": "direct",
+      "tag": "direct"
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        "action": "sniff",
+        "sniffer": [
+          "http",
+          "tls",
+          "quic",
+          "dns"
+        ],
+        "timeout": "300ms"
+      },
+      {
+        "protocol": "dns",
+        "action": "hijack-dns"
+      },
+      {
+        "rule_set": "geosite-ir",
+        "action": "route",
+        "outbound": "direct"
+      },
+      {
+        "rule_set": "geoip-ir",
+        "action": "route",
+        "outbound": "direct"
+      }
+    ],
+    "rule_set": [
+      {
+        "type": "remote",
+        "tag": "geosite-ir",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/Chocolate4U/Iran-sing-box-rules/rule-set/geosite-ir.srs",
+        "download_detour": "direct"
+      },
+      {
+        "type": "remote",
+        "tag": "geoip-ir",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/Chocolate4U/Iran-sing-box-rules/rule-set/geoip-ir.srs",
+        "download_detour": "direct"
+      }
+    ],
+    "final": "hysteria2",
+    "auto_detect_interface": true,
+    "default_domain_resolver": {
+      "server": "proxy-dns"
+    }
+  },
+  "experimental": {
+    "cache_file": {
+      "enabled": true,
+      "path": "cache.db"
+    }
+  }
+}
