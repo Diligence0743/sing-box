@@ -1,0 +1,45 @@
+{
+    "log": {
+      "level": "info",
+      "timestamp": true
+    },
+    "inbounds": [
+      {
+        "type": "hysteria2",
+        "tag": "hy2-in",
+        "listen": "::",
+        "listen_port": 443,
+        "udp_timeout": "5m",
+        "up_mbps": 100,
+        "down_mbps": 100,
+        "users": [
+          {
+            "name": "user1",
+            "password": "YOUR_PASSWORD_HERE"
+          }
+        ],
+        "tls": {
+          "enabled": true,
+          "server_name": "example.com",
+          "alpn": ["h3"],
+          "certificate_path": "/path/to/your/fullchain.cer",
+          "key_path": "/path/to/your/private.key",
+          "min_version": "1.3"
+        },
+        "masquerade": {
+          "type": "proxy",
+          "url": "https://www.google.com",
+          "rewrite_host": true
+        }
+      }
+    ],
+    "outbounds": [
+      {
+        "type": "direct",
+        "tag": "direct"
+      }
+    ],
+    "route": {
+      "final": "direct"
+    }
+  }
